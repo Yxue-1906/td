@@ -125,11 +125,9 @@ void Wget::on_ok(unique_ptr<HttpQuery> http_query_ptr) {
     ttl_--;
     connection_.reset();
     yield();
-  } else if (http_query_ptr->code_ >= 200 && http_query_ptr->code_ < 300) {
+  } else {
     promise_.set_value(std::move(http_query_ptr));
     stop();
-  } else {
-    on_error(Status::Error(PSLICE() << "HTTP error: " << http_query_ptr->code_));
   }
 }
 
