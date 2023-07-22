@@ -867,6 +867,7 @@ string FileManager::get_file_name(FileType file_type, Slice path) {
       break;
     case FileType::ProfilePhoto:
     case FileType::Photo:
+    case FileType::PhotoStory:
       if (extension != "jpg" && extension != "jpeg" && extension != "gif" && extension != "png" && extension != "tif" &&
           extension != "bmp") {
         return fix_file_extension(file_name, "photo", "jpg");
@@ -882,6 +883,11 @@ string FileManager::get_file_name(FileType file_type, Slice path) {
     case FileType::VideoNote:
       if (extension != "mov" && extension != "3gp" && extension != "mpeg4" && extension != "mp4" &&
           extension != "mkv") {
+        return fix_file_extension(file_name, "video", "mp4");
+      }
+      break;
+    case FileType::VideoStory:
+      if (extension != "mp4") {
         return fix_file_extension(file_name, "video", "mp4");
       }
       break;
@@ -925,6 +931,23 @@ string FileManager::get_file_name(FileType file_type, Slice path) {
 
 bool FileManager::is_remotely_generated_file(Slice conversion) {
   return begins_with(conversion, "#map#") || begins_with(conversion, "#audio_t#");
+}
+
+vector<int> FileManager::get_missing_file_parts(const Status &error) {
+  vector<int> result;
+  auto error_message = error.message();
+  if (begins_with(error_message, "FILE_PART_") && ends_with(error_message, "_MISSING")) {
+    auto r_file_part = to_integer_safe<int>(error_message.substr(10, error_message.size() - 18));
+    if (r_file_part.is_error()) {
+      LOG(ERROR) << "Receive error " << error;
+    } else {
+      result.push_back(r_file_part.ok());
+    }
+  }
+  if (error_message == "FILE_PART_INVALID") {
+    result.push_back(0);
+  }
+  return result;
 }
 
 void FileManager::check_local_location(FileId file_id, bool skip_file_size_checks) {
@@ -2458,7 +2481,7 @@ void FileManager::run_download(FileNodePtr node, bool force_update_priority) {
     QueryId query_id = queries_container_.create(Query{file_id, Query::Type::DownloadReloadDialog});
     node->download_id_ = query_id;
     context_->reload_photo(file_view.remote_location().get_source(),
-                           PromiseCreator::lambda([query_id, actor_id = actor_id(this), file_id](Result<Unit> res) {
+                           PromiseCreator::lambda([actor_id = actor_id(this), query_id, file_id](Result<Unit> res) {
                              Status error;
                              if (res.is_ok()) {
                                error = Status::Error("FILE_DOWNLOAD_ID_INVALID");
@@ -2484,7 +2507,7 @@ void FileManager::run_download(FileNodePtr node, bool force_update_priority) {
     node->download_was_update_file_reference_ = true;
 
     context_->repair_file_reference(
-        file_id, PromiseCreator::lambda([query_id, actor_id = actor_id(this), file_id](Result<Unit> res) {
+        file_id, PromiseCreator::lambda([actor_id = actor_id(this), query_id, file_id](Result<Unit> res) {
           Status error;
           if (res.is_ok()) {
             error = Status::Error("FILE_DOWNLOAD_RESTART_WITH_FILE_REFERENCE");
@@ -2988,7 +3011,7 @@ void FileManager::run_upload(FileNodePtr node, vector<int> bad_parts) {
     node->upload_was_update_file_reference_ = true;
 
     context_->repair_file_reference(node->main_file_id_,
-                                    PromiseCreator::lambda([query_id, actor_id = actor_id(this)](Result<Unit> res) {
+                                    PromiseCreator::lambda([actor_id = actor_id(this), query_id](Result<Unit> res) {
                                       send_closure(actor_id, &FileManager::on_error, query_id,
                                                    Status::Error("FILE_UPLOAD_RESTART_WITH_FILE_REFERENCE"));
                                     }));
@@ -3226,7 +3249,9 @@ Result<FileId> FileManager::check_input_file_id(FileType type, Result<FileId> re
     if (real_type != type && !(real_type == FileType::Temp && file_view.has_url()) &&
         !(is_document_file_type(real_type) && is_document_file_type(type)) &&
         !(is_background_type(real_type) && is_background_type(type)) &&
-        !(file_view.is_encrypted() && type == FileType::Ringtone)) {
+        !(file_view.is_encrypted() && type == FileType::Ringtone) &&
+        !(real_type == FileType::PhotoStory && type == FileType::Photo) &&
+        !(real_type == FileType::Photo && type == FileType::PhotoStory)) {
       // TODO: send encrypted file to unencrypted chat
       return Status::Error(400, PSLICE() << "Can't use file of type " << real_type << " as " << type);
     }

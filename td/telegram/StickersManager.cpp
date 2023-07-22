@@ -1057,8 +1057,9 @@ class UploadStickerFileQuery final : public Td::ResultHandler {
   void on_error(Status status) final {
     if (was_uploaded_) {
       CHECK(file_id_.is_valid());
-      if (begins_with(status.message(), "FILE_PART_") && ends_with(status.message(), "_MISSING")) {
-        // TODO td_->stickers_manager_->on_upload_sticker_file_part_missing(file_id_, to_integer<int32>(status.message().substr(10)));
+      auto bad_parts = FileManager::get_missing_file_parts(status);
+      if (!bad_parts.empty()) {
+        // TODO td_->stickers_manager_->on_upload_sticker_file_parts_missing(file_id_, std::move(bad_parts));
         // return;
       } else {
         if (status.code() != 429 && status.code() < 500 && !G()->close_flag()) {
@@ -6377,19 +6378,19 @@ void StickersManager::get_default_emoji_statuses(bool is_recursive,
     return;
   }
 
-  vector<td_api::object_ptr<td_api::emojiStatus>> statuses;
+  vector<int64> custom_emoji_ids;
   for (auto sticker_id : sticker_set->sticker_ids_) {
     auto custom_emoji_id = get_custom_emoji_id(sticker_id);
     if (!custom_emoji_id.is_valid()) {
       LOG(ERROR) << "Ignore wrong sticker " << sticker_id;
       continue;
     }
-    statuses.push_back(td_api::make_object<td_api::emojiStatus>(custom_emoji_id.get()));
-    if (statuses.size() >= 8) {
+    custom_emoji_ids.push_back(custom_emoji_id.get());
+    if (custom_emoji_ids.size() >= 8) {
       break;
     }
   }
-  promise.set_value(td_api::make_object<td_api::emojiStatuses>(std::move(statuses)));
+  promise.set_value(td_api::make_object<td_api::emojiStatuses>(std::move(custom_emoji_ids)));
 }
 
 bool StickersManager::is_default_emoji_status(CustomEmojiId custom_emoji_id) {
@@ -8339,8 +8340,6 @@ void StickersManager::on_upload_sticker_file_error(FileId file_id, Status status
   auto promise = std::move(it->second.second);
 
   being_uploaded_files_.erase(it);
-
-  // TODO FILE_PART_X_MISSING support
 
   promise.set_error(Status::Error(status.code() > 0 ? status.code() : 500,
                                   status.message()));  // TODO CHECK that status has always a code

@@ -6,6 +6,7 @@
 //
 #include "td/telegram/DraftMessage.h"
 
+#include "td/telegram/AccessRights.h"
 #include "td/telegram/Dependencies.h"
 #include "td/telegram/Global.h"
 #include "td/telegram/MessageEntity.h"
@@ -13,6 +14,7 @@
 #include "td/telegram/misc.h"
 #include "td/telegram/ServerMessageId.h"
 #include "td/telegram/Td.h"
+#include "td/telegram/telegram_api.h"
 #include "td/telegram/UpdatesManager.h"
 
 #include "td/utils/buffer.h"
@@ -194,8 +196,12 @@ Result<unique_ptr<DraftMessage>> DraftMessage::get_draft_message(
   if (result->reply_to_message_id_ != MessageId() && !result->reply_to_message_id_.is_valid()) {
     return Status::Error(400, "Invalid reply_to_message_id specified");
   }
-  result->reply_to_message_id_ = td->messages_manager_->get_reply_to_message_id(dialog_id, top_thread_message_id,
-                                                                                result->reply_to_message_id_, true);
+  result->reply_to_message_id_ =
+      td->messages_manager_
+          ->get_message_input_reply_to(
+              dialog_id, top_thread_message_id,
+              td_api::make_object<td_api::messageReplyToMessage>(0, result->reply_to_message_id_.get()), true)
+          .message_id_;
 
   auto input_message_content = std::move(draft_message->input_message_text_);
   if (input_message_content != nullptr) {

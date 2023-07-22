@@ -6,7 +6,7 @@ if (POLICY CMP0065)
   cmake_policy(SET CMP0065 NEW)
 endif()
 
-project(TDLib VERSION 1.8.14 LANGUAGES CXX C)
+project(TDLib VERSION 1.8.15 LANGUAGES CXX C)
 
 if (NOT DEFINED CMAKE_MODULE_PATH)
   set(CMAKE_MODULE_PATH "")
@@ -369,6 +369,7 @@ set(TDLIB_SOURCE
   td/telegram/Game.cpp
   td/telegram/GameManager.cpp
   td/telegram/Global.cpp
+  td/telegram/GlobalPrivacySettings.cpp
   td/telegram/GroupCallManager.cpp
   td/telegram/GroupCallParticipant.cpp
   td/telegram/GroupCallParticipantOrder.cpp
@@ -391,6 +392,7 @@ set(TDLIB_SOURCE
   td/telegram/MessageEntity.cpp
   td/telegram/MessageExtendedMedia.cpp
   td/telegram/MessageId.cpp
+  td/telegram/MessageInputReplyTo.cpp
   td/telegram/MessageReaction.cpp
   td/telegram/MessageReplyHeader.cpp
   td/telegram/MessageReplyInfo.cpp
@@ -468,6 +470,11 @@ set(TDLIB_SOURCE
   td/telegram/StickersManager.cpp
   td/telegram/StickerType.cpp
   td/telegram/StorageManager.cpp
+  td/telegram/StoryContent.cpp
+  td/telegram/StoryContentType.cpp
+  td/telegram/StoryDb.cpp
+  td/telegram/StoryInteractionInfo.cpp
+  td/telegram/StoryManager.cpp
   td/telegram/SuggestedAction.cpp
   td/telegram/Support.cpp
   td/telegram/Td.cpp
@@ -480,6 +487,8 @@ set(TDLIB_SOURCE
   td/telegram/TranslationManager.cpp
   td/telegram/UpdatesManager.cpp
   td/telegram/Usernames.cpp
+  td/telegram/UserPrivacySetting.cpp
+  td/telegram/UserPrivacySettingRule.cpp
   td/telegram/Venue.cpp
   td/telegram/VideoNotesManager.cpp
   td/telegram/VideosManager.cpp
@@ -626,6 +635,7 @@ set(TDLIB_SOURCE
   td/telegram/GameManager.h
   td/telegram/GitCommitHash.h
   td/telegram/Global.h
+  td/telegram/GlobalPrivacySettings.h
   td/telegram/GroupCallId.h
   td/telegram/GroupCallManager.h
   td/telegram/GroupCallParticipant.h
@@ -653,6 +663,7 @@ set(TDLIB_SOURCE
   td/telegram/MessageEntity.h
   td/telegram/MessageExtendedMedia.h
   td/telegram/MessageId.h
+  td/telegram/MessageInputReplyTo.h
   td/telegram/MessageLinkInfo.h
   td/telegram/MessageReaction.h
   td/telegram/MessageReplyHeader.h
@@ -755,6 +766,14 @@ set(TDLIB_SOURCE
   td/telegram/StickersManager.h
   td/telegram/StickerType.h
   td/telegram/StorageManager.h
+  td/telegram/StoryContent.h
+  td/telegram/StoryContentType.h
+  td/telegram/StoryDb.h
+  td/telegram/StoryFullId.h
+  td/telegram/StoryId.h
+  td/telegram/StoryInteractionInfo.h
+  td/telegram/StoryListId.h
+  td/telegram/StoryManager.h
   td/telegram/SuggestedAction.h
   td/telegram/Support.h
   td/telegram/Td.h
@@ -770,6 +789,8 @@ set(TDLIB_SOURCE
   td/telegram/UpdatesManager.h
   td/telegram/UserId.h
   td/telegram/Usernames.h
+  td/telegram/UserPrivacySetting.h
+  td/telegram/UserPrivacySettingRule.h
   td/telegram/Venue.h
   td/telegram/Version.h
   td/telegram/VideoNotesManager.h
@@ -825,6 +846,7 @@ set(TDLIB_SOURCE
   td/telegram/StickerMaskPosition.hpp
   td/telegram/StickerPhotoSize.hpp
   td/telegram/StickersManager.hpp
+  td/telegram/StoryInteractionInfo.hpp
   td/telegram/TranscriptionInfo.hpp
   td/telegram/VideoNotesManager.hpp
   td/telegram/VideosManager.hpp
